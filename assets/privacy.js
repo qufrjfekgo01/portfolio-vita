@@ -58,10 +58,24 @@
       return;
     }
     wipe();
-    // 입력값을 수집하지 않고 완료 이벤트만 전송합니다.
-    track('generate_lead', { lead_type: 'purchase_inquiry', item_id: 'vita_gummy' });
+    // 입력값은 수집하지 않습니다. GA4 전송 후 완료 화면으로 이동합니다.
+    var redirected = false;
+    function goToResult() {
+      if (redirected) return;
+      redirected = true;
+      location.replace('result.html');
+    }
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'generate_lead', {
+        lead_type: 'purchase_inquiry',
+        item_id: 'vita_gummy',
+        event_callback: goToResult,
+        event_timeout: 2000
+      });
+    } else {
+      goToResult();
+    }
     if (typeof window.fbq === 'function') window.fbq('track', 'Lead');
-    location.replace('result.html');
   });
 
   document.querySelectorAll('[data-privacy-open]').forEach(function (b) {
