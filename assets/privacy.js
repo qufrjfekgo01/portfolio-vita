@@ -22,8 +22,13 @@
     form.reset();
   }
 
-  function open(m) {
+  function track(eventName, params) {
+    if (typeof window.gtag === 'function') window.gtag('event', eventName, params || {});
+  }
+
+  function open(m, entryPoint) {
     mode = m;
+    track('privacy_notice_open', { entry_point: entryPoint || 'form', modal_mode: m });
     agree.checked = false;
     ok.disabled = true;
     ok.textContent = m === 'submit' ? '동의하고 완료하기' : '확인했습니다';
@@ -32,34 +37,60 @@
     agree.focus();
   }
 
-  function close() {
+  function close(method) {
+    track('privacy_notice_dismiss', { consent_context: mode, dismiss_method: method || 'unknown' });
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  agree.addEventListener('change', function () { ok.disabled = !agree.checked; });
-  cancel.addEventListener('click', close);
-  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  agree.addEventListener('change', function () {
+    ok.disabled = !agree.checked;
+    if (agree.checked) track('privacy_notice_consent', { consent_context: mode, action: 'checked' });
+  });
+  cancel.addEventListener('click', function () { close('button'); });
+  modal.addEventListener('click', function (e) { if (e.target === modal) close('backdrop'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close('escape'); });
 
   ok.addEventListener('click', function () {
-    if (mode !== 'submit') { close(); return; }
+    if (mode !== 'submit') {
+      track('privacy_notice_acknowledge', { consent_context: 'info' });
+      close('acknowledge');
+      return;
+    }
     wipe();
-    // 분석 도구를 붙였다면 여기서 개인정보 없이 이벤트 이름만 보냅니다 (Day 34~35).
-    if (typeof window.gtag === 'function') window.gtag('event', 'generate_lead');
+    // 입력값을 수집하지 않고 완료 이벤트만 전송합니다.
+    track('generate_lead', { lead_type: 'purchase_inquiry', item_id: 'vita_gummy' });
     if (typeof window.fbq === 'function') window.fbq('track', 'Lead');
     location.replace('result.html');
   });
 
   document.querySelectorAll('[data-privacy-open]').forEach(function (b) {
-    b.addEventListener('click', function (e) { e.preventDefault(); open('info'); });
+    b.addEventListener('click', function (e) {
+      e.preventDefault();
+      var entryPoint = b.closest('header') ? 'header' : (b.closest('footer') ? 'footer' : 'form');
+      open('info', entryPoint);
+    });
   });
 
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (!form.checkValidity()) { form.reportValidity(); return; }
-      open('submit');
+      var valid = form.checkValidity();
+      track('form_submit_attempt', { form_id: 'lead_form', form_valid: valid });
+      if (!valid) {
+        form.querySelectorAll('input, select, textarea').forEach(function (field) {
+          if (field.validity.valid) return;
+          var errorType = field.validity.valueMissing ? 'required' : (field.validity.patternMismatch ? 'pattern' : 'invalid');
+          track('form_validation_error', {
+            form_id: 'lead_form',
+            field_name: field.id === 'f-name' ? 'name' : (field.id === 'f-contact' ? 'contact' : 'other'),
+            error_type: errorType
+          });
+        });
+        form.reportValidity();
+        return;
+      }
+      open('submit', 'form');
     });
   }
 
