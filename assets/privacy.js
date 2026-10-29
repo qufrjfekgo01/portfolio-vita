@@ -22,8 +22,34 @@
     form.reset();
   }
 
+  function trackMeta(name, params) {
+    if (name === 'page_view' || name.indexOf('scroll') === 0) return;
+    if (window.fbq) {
+      var events = {
+        generate_lead: 'Lead',
+        sign_up: 'CompleteRegistration',
+        contact_click: 'Contact',
+        view_item: 'ViewContent',
+        add_to_cart: 'AddToCart',
+        begin_checkout: 'InitiateCheckout',
+        search: 'Search'
+      };
+      if (name === 'purchase') {
+        if (window.fbq) fbq('track', 'Purchase', {
+          value: params && params.value,
+          currency: 'KRW'
+        });
+      } else if (events[name]) {
+        if (window.fbq) fbq('track', events[name]);
+      } else {
+        if (window.fbq) fbq('trackCustom', name);
+      }
+    }
+  }
+
   function track(eventName, params) {
     if (typeof window.gtag === 'function') window.gtag('event', eventName, params || {});
+    trackMeta(eventName, params);
   }
 
   function open(m, entryPoint) {
@@ -72,10 +98,11 @@
         event_callback: goToResult,
         event_timeout: 2000
       });
+      if (window.fbq) fbq('track', 'Lead');
     } else {
+      if (window.fbq) fbq('track', 'Lead');
       goToResult();
     }
-    if (typeof window.fbq === 'function') window.fbq('track', 'Lead');
   });
 
   document.querySelectorAll('[data-privacy-open]').forEach(function (b) {
