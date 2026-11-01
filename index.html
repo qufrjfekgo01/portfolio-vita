@@ -57,7 +57,7 @@
 .ev{display:flex;gap:8px;align-items:center;margin:16px 0 8px}.ev span{background:#2F6B3F;color:#fff;border-radius:999px;font-weight:700;padding:1px 10px;font-size:11px}
 .coupon{display:block !important;background:#2F6B3F !important;color:#fff !important;text-align:center;height:50px;line-height:50px;font-size:16px;font-weight:500}
 .opt{display:grid;grid-template-columns:120px 1fr;margin-top:30px;border-top:1px solid var(--line);padding-top:20px;row-gap:12px;align-items:center}
-.opt .chips{display:flex;gap:8px}.opt .chips span{border:1px solid #ccc;padding:8px 18px;font-size:13px}.opt .chips span.on{border-color:var(--ink);font-weight:700}
+.opt .chips{display:flex;gap:8px}.opt .chips span{border:1px solid #ccc;padding:8px 18px;font-size:13px;cursor:pointer;user-select:none}.opt .chips span.on{border-color:var(--ink);font-weight:700}.opt .chips span:focus-visible{outline:2px solid var(--dk);outline-offset:2px}
 .tot{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);margin-top:24px;padding-top:16px;font-size:16px;font-weight:700}
 .tot b{font-size:28px;font-weight:800}
 .buy{display:grid;grid-template-columns:54px 1fr 1fr;gap:8px;margin-top:12px}
@@ -169,9 +169,9 @@ fbq('init', '1999452524082114');
     <div class="ben"><b>뉴트젠 멀티구미 공식스토어 고객을 위한 혜택</b><div><span>첫 구매 혜택</span><span>첫구매 2,000원 할인 쿠폰</span></div><div><span>정기배송</span><span>정기배송으로 약 15% 할인</span></div><div><span>무료배송 기준</span><span>5만원 이상 무료 배송</span></div></div>
     <p class="ev"><span>EVENT</span>지금 받을 수 있는 혜택</p>
     <a class="coupon" href="#apply">신규회원 전용 쿠폰 받기 ⤓</a>
-    <div class="opt"><span>구성 선택</span><span class="chips"><span class="on">1통</span><span class="">2통</span><span class="">3통</span></span>
-<span>구성</span><span>1통 40일분</span><span>섭취</span><span>하루 2알</span></div>
-    <div class="tot"><span>총 상품금액</span><b>22,900원</b></div>
+    <div class="opt"><span>구성 선택</span><span class="chips"><span class="on" data-qty="1" role="button" tabindex="0" aria-pressed="true">1통</span><span data-qty="2" role="button" tabindex="0" aria-pressed="false">2통</span><span data-qty="3" role="button" tabindex="0" aria-pressed="false">3통</span></span>
+<span>구성</span><span id="selected-pack">1통 40일분</span><span>섭취</span><span>하루 2알</span></div>
+    <div class="tot"><span>총 상품금액</span><b id="total-price">26,000원</b></div>
     <div class="buy"><a href="#apply">☆</a><a href="#apply">장바구니 담기</a><a class="dark" href="#apply" id="cta-main">구매</a></div>
   </div>
 </section>
@@ -251,6 +251,32 @@ fbq('init', '1999452524082114');
   <div><b>뉴트젠 멀티구미</b></div>
   <div><a href="#apply">구매하기</a><a href="#" data-privacy-open>개인정보 처리 안내</a><p style="margin-top:20px">이 페이지는 수업 실습용 페이지입니다. 실제 판매·결제는 이루어지지 않으며, 표기된 수치·후기는 예시입니다.</p></div>
 </div></footer>
+<script>
+(function(){
+  const chips = document.querySelectorAll('.chips [data-qty]');
+  const totalPrice = document.getElementById('total-price');
+  const selectedPack = document.getElementById('selected-pack');
+  function selectQuantity(chip){
+    const quantity = Number(chip.dataset.qty);
+    chips.forEach(function(item){
+      const selected = item === chip;
+      item.classList.toggle('on', selected);
+      item.setAttribute('aria-pressed', String(selected));
+    });
+    totalPrice.textContent = (26000 * quantity).toLocaleString('ko-KR') + '원';
+    selectedPack.textContent = quantity + '통 ' + (40 * quantity) + '일분';
+  }
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){ selectQuantity(chip); });
+    chip.addEventListener('keydown', function(event){
+      if(event.key === 'Enter' || event.key === ' '){
+        event.preventDefault();
+        selectQuantity(chip);
+      }
+    });
+  });
+})();
+</script>
 <div class="modal" id="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title" aria-hidden="true">
   <div class="modal-box">
     <span class="badge">개인정보 미수집 · 즉시 파기</span>
